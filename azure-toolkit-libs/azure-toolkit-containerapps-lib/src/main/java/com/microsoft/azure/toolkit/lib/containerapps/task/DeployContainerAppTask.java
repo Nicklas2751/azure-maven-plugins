@@ -26,7 +26,7 @@ import org.apache.commons.lang3.StringUtils;
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+import java.util.function.Function;
 
 
 public class DeployContainerAppTask extends AzureTask<ContainerApp> {
@@ -49,10 +49,10 @@ public class DeployContainerAppTask extends AzureTask<ContainerApp> {
     }
 
     private void preCheck(ContainerAppsEnvironmentConfig environmentConfig) {
-        Optional.ofNullable(environmentConfig).map(ContainerAppsEnvironmentConfig::getSubscriptionId).filter(StringUtils::isNotBlank).orElseThrow(() -> new AzureToolkitRuntimeException("'subscriptionId' is required"));
-        Optional.ofNullable(environmentConfig).map(ContainerAppsEnvironmentConfig::getAppEnvironmentName).filter(StringUtils::isNotBlank).orElseThrow(() -> new AzureToolkitRuntimeException("'environmentName' is required"));
-        Optional.ofNullable(config).map(ContainerAppConfig::getAppName).filter(StringUtils::isNotBlank).orElseThrow(() -> new AzureToolkitRuntimeException("'appName' is required"));
-        Optional.ofNullable(environmentConfig).map(ContainerAppsEnvironmentConfig::getResourceGroup).filter(StringUtils::isNotBlank).orElseThrow(() -> new AzureToolkitRuntimeException("'resourceGroup' is required"));
+        checkNotBlank(environmentConfig, ContainerAppsEnvironmentConfig::getSubscriptionId, "subscriptionId");
+        checkNotBlank(environmentConfig, ContainerAppsEnvironmentConfig::getAppEnvironmentName, "environmentName");
+        checkNotBlank(config, ContainerAppConfig::getAppName, "appName");
+        checkNotBlank(environmentConfig, ContainerAppsEnvironmentConfig::getResourceGroup, "resourceGroup");
     }
 
     private void addCreateResourceGroupTaskIfNecessary(@Nonnull final ContainerAppsEnvironmentConfig config) {
@@ -60,7 +60,7 @@ public class DeployContainerAppTask extends AzureTask<ContainerApp> {
             .getOrDraft(config.getResourceGroup(), config.getResourceGroup());
 
         if (resourceGroup.isDraftForCreating() && !resourceGroup.exists()) {
-            final String region = Optional.ofNullable(config.getRegion()).filter(StringUtils::isNotBlank).orElseThrow(() -> new AzureToolkitRuntimeException("'region' is required"));
+            final String region = checkNotBlank(config, ContainerAppsEnvironmentConfig::getRegion, "region");
             this.subTasks.add(new CreateResourceGroupTask(config.getSubscriptionId(), config.getResourceGroup(), Region.fromName(region)));
         }
     }
@@ -133,5 +133,15 @@ public class DeployContainerAppTask extends AzureTask<ContainerApp> {
             t.getBody().call();
         }
         return containerApp;
+    }
+
+    private static <T> String checkNotBlank(T config, Function<T, String> getter, String name) {
+        if (config != null) {
+            String value = getter.apply(config);
+            if (StringUtils.isNotBlank(value)) {
+                return value;
+            }
+        }
+        throw new AzureToolkitRuntimeException(String.format("'%s' is required", name));
     }
 }

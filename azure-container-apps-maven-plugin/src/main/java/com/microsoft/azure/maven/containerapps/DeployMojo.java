@@ -30,14 +30,6 @@ import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKN
 @Mojo(name = "deploy")
 @Slf4j
 public class DeployMojo extends AbstractMojoBase {
-
-    private static final int GET_URL_TIMEOUT = 60;
-    private static final int GET_STATUS_TIMEOUT = 180;
-    private static final String PROJECT_SKIP = "Packaging type is pom, taking no actions.";
-    private static final String PROJECT_NO_CONFIGURATION = "Configuration does not exist, taking no actions.";
-    private static final String PROJECT_NOT_SUPPORT = "`azure-container-apps:deploy` does not support maven project with " +
-            "packaging %s, only jar is supported";
-
     /**
      * Boolean flag to control whether to wait the deployment status to be ready after deployment
      */
@@ -76,10 +68,11 @@ public class DeployMojo extends AbstractMojoBase {
         if (MavenConfigUtils.isJarPackaging(project)) {
             return true;
         } else if (MavenConfigUtils.isPomPackaging(project)) {
-            log.info(PROJECT_SKIP);
+            log.info("Packaging type is pom, taking no actions.");
             return false;
         } else {
-            throw new MojoExecutionException(String.format(PROJECT_NOT_SUPPORT, project.getPackaging()));
+            throw new MojoExecutionException(String.format("`azure-container-apps:deploy` does not support maven project with " +
+                "packaging %s, only jar is supported", project.getPackaging()));
         }
     }
 
@@ -87,7 +80,7 @@ public class DeployMojo extends AbstractMojoBase {
         final String pluginKey = plugin.getPluginLookupKey();
         final Xpp3Dom pluginDom = MavenConfigUtils.getPluginConfiguration(project, pluginKey);
         if (pluginDom == null || pluginDom.getChildren().length == 0) {
-            log.warn(PROJECT_NO_CONFIGURATION);
+            log.warn("Configuration does not exist, taking no actions.");
             return false;
         } else {
             return true;
