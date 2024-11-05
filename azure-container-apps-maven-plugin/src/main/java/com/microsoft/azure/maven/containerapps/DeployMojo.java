@@ -30,18 +30,6 @@ import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKN
 @Mojo(name = "deploy")
 @Slf4j
 public class DeployMojo extends AbstractMojoBase {
-    /**
-     * Boolean flag to control whether to wait the deployment status to be ready after deployment
-     */
-    @Parameter(property = "noWait")
-    private Boolean noWait;
-
-    /**
-     * Boolean flag to control whether to prompt the tasks before deployment
-     */
-    @Parameter(property = "prompt")
-    private Boolean prompt;
-
     @Override
     @AzureOperation("user/containerapps.deploy_mojo")
     protected void doExecute() throws Throwable {
