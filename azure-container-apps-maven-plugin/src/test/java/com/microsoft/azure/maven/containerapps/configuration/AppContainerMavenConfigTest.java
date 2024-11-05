@@ -34,8 +34,8 @@ public class AppContainerMavenConfigTest {
 
     @Test
     public void testDeploymentType() {
-        config.setType(DeploymentType.Code);
-        assertEquals(DeploymentType.Code, config.getType());
+        config.setType(DeploymentType.CODE.toString());
+        assertEquals(DeploymentType.CODE, config.getDeploymentType());
     }
 
     @Test
@@ -63,7 +63,7 @@ public class AppContainerMavenConfigTest {
     public void testDefaultValues() {
         assertNull(config.getCpu());
         assertNull(config.getMemory());
-        assertEquals(DeploymentType.Image, config.getType());
+        assertEquals(DeploymentType.IMAGE, config.getDeploymentType());
         assertNull(config.getImage());
         assertNull(config.getEnvironment());
         assertNull(config.getDirectory());

@@ -63,7 +63,7 @@ public class ConfigParser {
         if (containers.get(0).getEnvironment() != null) {
             imageConfig.setEnvironmentVariables(containers.get(0).getEnvironment());
         }
-        if (containers.get(0).getType() == DeploymentType.Code || containers.get(0).getType() == DeploymentType.Artifact) {
+        if (containers.get(0).getDeploymentType() == DeploymentType.CODE || containers.get(0).getDeploymentType() == DeploymentType.ARTIFACT) {
             ContainerAppDraft.BuildImageConfig buildImageConfig = new ContainerAppDraft.BuildImageConfig();
             buildImageConfig.setSource(Paths.get(containers.get(0).getDirectory()));
             //Check if we can generate dockerfile for this project. Currently only support spring boot project

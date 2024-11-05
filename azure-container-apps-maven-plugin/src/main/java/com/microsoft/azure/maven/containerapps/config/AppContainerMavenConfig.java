@@ -8,6 +8,7 @@ package com.microsoft.azure.maven.containerapps.config;
 import com.azure.resourcemanager.appcontainers.models.EnvironmentVar;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -20,11 +21,15 @@ public class AppContainerMavenConfig {
     private Double cpu;
     @Nullable
     private String memory;
-    private DeploymentType type = DeploymentType.Image;
+    private String type;
     @Nullable
     private String image;
     @Nullable
     private List<EnvironmentVar> environment;
     @Nullable
     private String directory;
+
+    public DeploymentType getDeploymentType() {
+        return StringUtils.isBlank(type) ? DeploymentType.IMAGE : DeploymentType.valueOf(type.toUpperCase());
+    }
 }
