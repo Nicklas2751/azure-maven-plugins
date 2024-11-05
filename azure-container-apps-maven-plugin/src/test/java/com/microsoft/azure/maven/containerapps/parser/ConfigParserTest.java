@@ -128,7 +128,8 @@ public class ConfigParserTest {
     }
 
     @Test
-    public void testGetContainerAppConfigCode() {
+    public void
+    testGetContainerAppConfigCode() {
         AppContainerMavenConfig containerConfig = new AppContainerMavenConfig();
         containerConfig.setDirectory(".");
         containerConfig.setEnvironment(Collections.emptyList());
