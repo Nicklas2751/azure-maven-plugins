@@ -66,12 +66,6 @@ public class ConfigParser {
         if (containers.get(0).getDeploymentType() == DeploymentType.CODE || containers.get(0).getDeploymentType() == DeploymentType.ARTIFACT) {
             ContainerAppDraft.BuildImageConfig buildImageConfig = new ContainerAppDraft.BuildImageConfig();
             buildImageConfig.setSource(Paths.get(containers.get(0).getDirectory()));
-            //Check if we can generate dockerfile for this project. Currently only support spring boot project
-            if (!imageConfig.sourceHasDockerFile()) {
-                if (!MavenUtils.isSpringBootProject(mojo.getProject())) {
-                    throw new AzureToolkitRuntimeException("Cannot generate Dockerfile for non-spring-boot project");
-                }
-            }
             //detect java version
             Map<String, String> sourceBuildEnv = new HashMap<>();
             String javaVersion = MavenUtils.getJavaVersion(mojo.getProject());
@@ -99,7 +93,7 @@ public class ConfigParser {
     }
 
     public IngressConfig getIngressConfig(IngressMavenConfig ingressMavenConfig) {
-        if (ingressMavenConfig == null) {
+        if (ingressMavenConfig == null || (ingressMavenConfig.getExternal() == null && ingressMavenConfig.getTargetPort() == null)) {
             return null;
         }
         IngressConfig ingressConfig = new IngressConfig();

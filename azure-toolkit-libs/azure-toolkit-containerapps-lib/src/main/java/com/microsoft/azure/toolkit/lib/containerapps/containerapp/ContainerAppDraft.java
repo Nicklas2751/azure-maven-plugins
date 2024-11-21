@@ -144,15 +144,7 @@ public class ContainerAppDraft extends ContainerApp implements AzResource.Draft<
             .orElse(null);
 
         AzureMessager.getMessager().success(AzureString.format("Azure Container App({0}) is successfully created.", this.getName()), browse, updateImage);
-
-        final Action<String> learnMore = Optional.ofNullable(AzureActionManager.getInstance().getAction(Action.OPEN_URL).withLabel("Learn More"))
-            .map(action -> action.bind("https://aka.ms/azuretools-aca-stack"))
-            .orElse(null);
-
-        final Action<String> openPortal = Optional.ofNullable(AzureActionManager.getInstance().getAction(Action.OPEN_URL).withLabel("Open Portal"))
-            .map(action -> action.bind(this.getPortalUrl()))
-            .orElse(null);
-        AzureMessager.getMessager().info("Azure container apps offers an automatic memory fitting experience for Java developers. To take advantage of this Java-optimized feature, please set your development stack to `Java` in the portal.", learnMore, openPortal);
+        printSuccessMessages();
         return result;
     }
 
@@ -206,10 +198,29 @@ public class ContainerAppDraft extends ContainerApp implements AzResource.Draft<
             .map(action -> action.bind(this))
             .orElse(null);
         messager.success(AzureString.format("Container App({0}) is successfully updated.", getName()), browse);
+        printSuccessMessages();
         if (isImageModified) {
             AzureTaskManager.getInstance().runOnPooledThread(() -> this.getRevisionModule().refresh());
         }
         return result;
+    }
+
+    private void printSuccessMessages() {
+        final Action<String> learnMore = Optional.ofNullable(AzureActionManager.getInstance().getAction(Action.OPEN_URL).withLabel("Learn More"))
+            .map(action -> action.bind("https://aka.ms/azuretools-aca-stack"))
+            .orElse(null);
+        final Action<String> openPortal = Optional.ofNullable(AzureActionManager.getInstance().getAction(Action.OPEN_URL).withLabel("Open Portal"))
+            .map(action -> action.bind(this.getPortalUrl()))
+            .orElse(null);
+        final Action<String> openApp = Optional.ofNullable(this.getIngressFqdn())
+            .filter(fqdn -> !StringUtils.isEmpty(fqdn))
+            .flatMap(fqdn -> Optional.ofNullable(AzureActionManager.getInstance()
+                    .getAction(Action.OPEN_URL)
+                    .withLabel("Open Application"))
+                .map(action -> action.bind(String.format("https://%s", fqdn))))
+            .orElse(null);
+
+        AzureMessager.getMessager().info("To take advantage of this Java-optimized feature, please set your development stack to `Java` in the portal.", learnMore, openPortal, openApp);
     }
 
     @Nonnull
@@ -253,9 +264,15 @@ public class ContainerAppDraft extends ContainerApp implements AzResource.Draft<
         } else {
             OperationContext.action().setTelemetryProperty("isDirectory", String.valueOf(Files.isDirectory(buildConfig.source)));
             if (Files.isDirectory(buildConfig.source)) {
+                if(!Utils.isSpringBootProject(buildConfig.source)) {
+                    throw new AzureToolkitRuntimeException("Failed to build image: Spring Boot project is required to build image from source code.");
+                }
                 AzureMessager.getMessager().warning("No Dockerfile detected. Running the build through ACR with a generated Dockerfile.");
                 generateDockerfile(buildConfig, sourceDockerFilePath);
             } else {
+                if (!Utils.isExecutableJar(buildConfig.source.toFile())) {
+                    throw new AzureToolkitRuntimeException("Failed to build image: Executable jar file is required to build image from artifact.");
+                }
                 AzureMessager.getMessager().warning("Building container image from artifact through ACR with a generated Dockerfile.");
                 tempFolder = generateTempFolder(buildConfig);
             }

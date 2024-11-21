@@ -27,6 +27,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -57,6 +58,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.jar.JarInputStream;
 import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -368,5 +370,54 @@ public class Utils {
             tOut.finish();
         }
         return tarFilePath;
+    }
+
+    public static boolean isSpringBootProject(Path projectPath) {
+        try {
+            // Check if `pom.xml` exists and contains Spring Boot references
+            Path pomPath = projectPath.resolve("pom.xml");
+            if (Files.exists(pomPath) &&
+                (containsText(pomPath, "org.springframework.boot") ||
+                    containsText(pomPath, "spring-boot-maven-plugin"))) {
+                return true;
+            }
+
+            // Check if `build.gradle` exists and contains Spring Boot references
+            Path gradlePath = projectPath.resolve("build.gradle");
+            if (Files.exists(gradlePath) &&
+                (containsText(gradlePath, "org.springframework.boot") ||
+                    containsText(gradlePath, "spring-boot-starter"))) {
+                return true;
+            }
+
+            // Check for Spring Boot configuration files
+            Path resourcesPath = projectPath.resolve("src/main/resources");
+            if (Files.exists(resourcesPath)) {
+                if (Files.exists(resourcesPath.resolve("application.properties")) ||
+                    Files.exists(resourcesPath.resolve("application.yml"))) {
+                    return true;
+                }
+            }
+        } catch (IOException e) {
+            return false;
+        }
+
+        return false;
+    }
+
+    private static boolean containsText(Path filePath, String text) throws IOException {
+        try (Stream<String> lines = Files.lines(filePath)) {
+            return lines.anyMatch(line -> line.contains(text));
+        }
+    }
+
+    public static boolean isExecutableJar(File file) {
+        try (final FileInputStream fileInputStream = new FileInputStream(file);
+             final JarInputStream jarInputStream = new JarInputStream(fileInputStream)) {
+            final Manifest manifest = jarInputStream.getManifest();
+            return Optional.ofNullable(manifest).map(Manifest::getMainAttributes).map(a -> a.getValue("Main-Class")).isPresent();
+        } catch (IOException e) {
+            return false;
+        }
     }
 }
